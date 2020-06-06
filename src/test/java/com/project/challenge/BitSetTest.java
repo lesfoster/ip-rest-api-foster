@@ -4,8 +4,9 @@ import org.apache.commons.net.util.Base64;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.BitSet;
-import java.util.Date;
 
 public class BitSetTest {
 
@@ -94,8 +95,8 @@ public class BitSetTest {
 
     @Test
     public void speedTrial() {
+        Instant start = Instant.now();
 
-        long startTime = new Date().getTime();
         // Note: timings gave 5M at ~14 seconds.
         int iterations = 200_000;
         for (int i = 0; i < iterations; i++) {
@@ -111,10 +112,11 @@ public class BitSetTest {
                 Assert.fail("Failed recreation test from decoded bytes.");
             }
         }
-        long endTime = new Date().getTime();
-        final double elapsedTime = (float) (endTime - startTime) / 1000.0;
-        System.out.println(String.format("Elapsed time is %f seconds for %d iterations", elapsedTime, iterations));
-        Assert.assertTrue("Long time to convert.", elapsedTime < 1.5);
+        Instant end = Instant.now();
+        Duration elapsedTime = Duration.between(start, end);
+
+        System.out.println(String.format("Elapsed time is %d milliseconds for %,d iterations", elapsedTime.toMillis(), iterations));
+        Assert.assertTrue("Long time to convert.", elapsedTime.toMillis() < 1500);
     }
 
     private BitSet getKBitSet() {
