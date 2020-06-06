@@ -33,7 +33,7 @@ public class IpAcquisition {
      *
      * @param cidrBlock allocate these values.
      */
-    @PostMapping(path="/create" + IpAcquisition.CIDR_BLOCK_PATH_NAME, consumes = MediaType.TEXT_PLAIN_VALUE)
+    @PostMapping(path="/cidr" + IpAcquisition.CIDR_BLOCK_PATH_NAME, consumes = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<Void> createCidrBlock(@PathVariable(CIDR_BLOCK_PATH_VAR) String cidrBlock) {
         ResponseEntity<Void> responseEntity = ResponseEntity.ok().build();
         log.debug("Got CIDR block to allocate: {}", cidrBlock);
@@ -47,7 +47,7 @@ public class IpAcquisition {
      * @param ipAddr attempt to give up use of this IP address and return it to the pool.
      * @return outcome of the attempt.
      */
-    @PutMapping(path="/release" + IpAcquisition.IP_ADDR_PATH_NAME)
+    @PutMapping(path="/freed" + IpAcquisition.IP_ADDR_PATH_NAME)
     public ResponseEntity<Void> releaseIp(@PathVariable(IP_ADDR_PATH_VAR) String ipAddr) {
         ResponseEntity<Void> responseEntity = ResponseEntity.ok().build();
         log.debug("Got IP address to release: {}", ipAddr);
@@ -63,7 +63,7 @@ public class IpAcquisition {
      * @param ipAddr attempt to obtain this IP address for use of caller.
      * @return outcome of the attempt.
      */
-    @PutMapping(path="/acquire" + IpAcquisition.IP_ADDR_PATH_NAME)
+    @PutMapping(path="/acquired" + IpAcquisition.IP_ADDR_PATH_NAME)
     public ResponseEntity<Void> acquireIp(@PathVariable(IP_ADDR_PATH_VAR) String ipAddr) {
         ResponseEntity<Void> responseEntity = ResponseEntity.ok().build();
         log.debug("Got IP address request: {}", ipAddr);
@@ -71,7 +71,7 @@ public class IpAcquisition {
         return responseEntity;
     }
 
-    @GetMapping(path="/list")
+    @GetMapping(path="/ip_states")
     public ResponseEntity<IpReport> listIps() {
         IpReport report = new IpReport();
         report.setCidr("10.0.0.0/24");

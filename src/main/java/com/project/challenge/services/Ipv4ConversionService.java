@@ -30,8 +30,8 @@ public class Ipv4ConversionService {
     // By default, excluding .0 and .255 from IP ranges in CIDR blocks.
     private boolean inclusiveHostCount = false;
 
-    @Value("ipcalc.inclusivehostcount")
-    public void setInclusiveHostCount(boolean flag) {
+    @Value("${ipcalc.inclusivehostcount:false}")
+    public void setInclusiveHostCount(Boolean flag) {
         this.inclusiveHostCount = flag;
     }
 
