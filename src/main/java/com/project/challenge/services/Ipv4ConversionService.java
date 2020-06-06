@@ -1,13 +1,7 @@
 package com.project.challenge.services;
 
-import com.google.common.net.InetAddresses;
-import org.apache.commons.net.util.SubnetUtils;
-import org.apache.commons.validator.routines.InetAddressValidator;
-import org.springframework.beans.factory.annotation.Value;
+import com.project.challenge.model.CIDR;
 import org.springframework.stereotype.Service;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * IP addresses are often handed around as period-jointed strings.  However, that is simply a human-readable
@@ -18,22 +12,7 @@ import java.util.regex.Pattern;
  * Unless configured in app props, not using inclusive host count.
  */
 @Service
-public class Ipv4ConversionService {
-    // Borrowed from Subnet Utils.
-    private static final Pattern CIDR_PATTERN = Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,3})");
-
-    public static final String INVALID_PI_FMT = "Invalid IP: %s";
-    public static final String INVALID_CIDR_FMT = "Invalid CIDR block: %s";
-
-    private InetAddressValidator validator = new InetAddressValidator();
-
-    // By default, excluding .0 and .255 from IP ranges in CIDR blocks.
-    private boolean inclusiveHostCount = false;
-
-    @Value("${ipcalc.inclusivehostcount:false}")
-    public void setInclusiveHostCount(Boolean flag) {
-        this.inclusiveHostCount = flag;
-    }
+public interface Ipv4ConversionService {
 
     /**
      * Checks address as valid IP.
@@ -41,24 +20,15 @@ public class Ipv4ConversionService {
      *
      * @return true if so; false otherwise.
      */
-    public boolean isValidIpAddress(String ipAddress) {
-        return ipAddress != null  &&  validator.isValid(ipAddress);
-    }
-
+    boolean isValidIpAddress(String ipAddress);
     /**
      * Returns int-conversion of the four 8-bit representations making up the IPv4 address.
      *
      * @param ipAddress must be valid IP address.
      * @return integer version.  Signed Java style integer.
-     * @throws InvalidException
+     * @throws InvalidFormatException
      */
-    public Integer getIpAsInt(String ipAddress) throws InvalidException {
-        if (isValidIpAddress(ipAddress)) {
-            return InetAddresses.coerceToInteger(InetAddresses.forString(ipAddress));
-        } else {
-            throw new InvalidException(INVALID_PI_FMT, ipAddress);
-        }
-    }
+    Integer getIpAsInt(String ipAddress) throws InvalidFormatException;
 
     /**
      * Test for validity of CIDR block.
@@ -67,10 +37,7 @@ public class Ipv4ConversionService {
      * @param cidr should be in required format
      * @return true if so; false otherwise
      */
-    public boolean isValidCidr(String cidr) {
-        Matcher matcher = CIDR_PATTERN.matcher(cidr);
-        return matcher.matches();
-    }
+    boolean isValidCidr(String cidr);
 
     /**
      * Checks whether the IP address given falls within the subnet represented by the CIDR block
@@ -79,28 +46,16 @@ public class Ipv4ConversionService {
      * @param ipAddress is this in range?
      * @param cidr this is the range to check.
      * @return true if in range; false otherwise
-     * @throws InvalidException if either IP or CIDR is invalid format.
+     * @throws InvalidFormatException if either IP or CIDR is invalid format.
      */
-    public boolean isIpInCidrRange(String ipAddress, String cidr) throws InvalidException {
-        if (! isValidCidr(cidr)) {
-            throw new InvalidException(INVALID_CIDR_FMT, cidr);
-        }
-        if (! isValidIpAddress(ipAddress)) {
-            throw new InvalidException(INVALID_PI_FMT, ipAddress);
-        }
-        final SubnetUtils subnetUtils = new SubnetUtils(cidr);
-        subnetUtils.setInclusiveHostCount(inclusiveHostCount);
-
-        final SubnetUtils.SubnetInfo subnetInfo = subnetUtils.getInfo();
-        return subnetInfo.isInRange(ipAddress);
-    }
+    boolean isIpInCidrRange(String ipAddress, String cidr) throws InvalidFormatException;
 
     /**
-     * Custom exception to indicate validity assumption has failed.
+     * Converts to internal representation "convenience" class.
+     *
+     * @param cidrStr in CIDR format
+     * @return converted object.
+     * @throws InvalidFormatException if not expected format.
      */
-    public static class InvalidException extends Exception {
-        public InvalidException(String msg, String value) {
-            super(String.format(msg, value));
-        }
-    }
+    CIDR toCidr(String cidrStr) throws InvalidFormatException;
 }

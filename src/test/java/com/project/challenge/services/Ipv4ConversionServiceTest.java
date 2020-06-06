@@ -1,5 +1,6 @@
 package com.project.challenge.services;
 
+import com.project.challenge.model.CIDR;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +24,7 @@ public class Ipv4ConversionServiceTest {
 
     @Before
     public void setup() {
-        this.service = new Ipv4ConversionService();
+        this.service = new Ipv4ConversionServiceImpl();
     }
 
     @Test
@@ -57,9 +58,19 @@ public class Ipv4ConversionServiceTest {
 
     @Test
     public void testInclusiveCount() throws Exception {
-        Ipv4ConversionService inclusiveService = new Ipv4ConversionService();
+        Ipv4ConversionServiceImpl inclusiveService = new Ipv4ConversionServiceImpl();
         inclusiveService.setInclusiveHostCount(true);
         Assert.assertTrue("Network Address not in Inclusive Range", inclusiveService.isIpInCidrRange(VALID_IP_NETADDR, VALID_CIDR));
         Assert.assertTrue("Broadcast Address not in Inclusive Range", inclusiveService.isIpInCidrRange(VALID_IP_BRDCSTADDR, VALID_CIDR));
+    }
+
+    @Test
+    public void testToCidr() throws Exception {
+        CIDR cidrObj = service.toCidr(VALID_CIDR);
+        Assert.assertNotNull("Null conversion response", cidrObj);
+        Assert.assertEquals("Unexpected starting address", 2152215809L, cidrObj.getStartingAddrLong());
+        Assert.assertEquals("Unexpected ending address", 2152216062L, cidrObj.getEndingAddrLong());
+        Assert.assertEquals("Unexpected IP address numeric range", 253L,cidrObj.getEndingAddrLong() -  cidrObj.getStartingAddrLong());
+        Assert.assertEquals("Failed to cache CIDR str", VALID_CIDR,cidrObj.getCidrBlockNotation());
     }
 }

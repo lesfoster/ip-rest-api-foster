@@ -1,9 +1,11 @@
 package com.project.challenge.controller;
 
 import com.project.challenge.model.IpReport;
+import com.project.challenge.services.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,16 +29,43 @@ public class IpAcquisition {
 
     private Logger log = LogManager.getLogger(IpAcquisition.class);
 
+    private IpStateService ipStateService;
+    private CidrStateService cidrStateService;
+
+    /**
+     * Gets constructed with a full-prepared state service to use.
+     *
+     * @param ipStateService used for storing the state back/reading states of IPs and CIDR blocks.
+     */
+    @Autowired
+    public IpAcquisition(IpStateService ipStateService, CidrStateService cidrStateService) {
+        this.ipStateService = ipStateService;
+        this.cidrStateService = cidrStateService;
+    }
+
     /**
      * CREATE – equivalent to POST, in that a new resources is being created.  Here, a CIDR block will be posted, and
      * the known IP address list should be increased.  This action will change what can be acquired, and listed.
      *
-     * @param cidrBlock allocate these values.
+     * @param ipAddr starting position for CIDR block.
+     * @param cidrBlockMaskSize allocate these values (after the slash).
      */
-    @PostMapping(path="/cidr" + IpAcquisition.CIDR_BLOCK_PATH_NAME, consumes = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<Void> createCidrBlock(@PathVariable(CIDR_BLOCK_PATH_VAR) String cidrBlock) {
-        ResponseEntity<Void> responseEntity = ResponseEntity.ok().build();
-        log.debug("Got CIDR block to allocate: {}", cidrBlock);
+    @PostMapping(path="/cidr" + IpAcquisition.IP_ADDR_PATH_NAME + IpAcquisition.CIDR_BLOCK_PATH_NAME)
+    public ResponseEntity<Void> createCidrBlock(
+            @PathVariable(IP_ADDR_PATH_VAR)String ipAddr,
+            @PathVariable(CIDR_BLOCK_PATH_VAR) String cidrBlockMaskSize) {
+
+        String cidrBlockStr = String.format("%s/%s", ipAddr, cidrBlockMaskSize);
+        log.debug("Got CIDR block to allocate: {}", cidrBlockStr);
+        ResponseEntity<Void> responseEntity;
+        try {
+            cidrStateService.setCidrBlock(cidrBlockStr);
+            responseEntity = ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (CidrExistsException cee) {
+            responseEntity = ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (InvalidFormatException ife) {
+            responseEntity = ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
         return responseEntity;
     }
 
@@ -49,9 +78,14 @@ public class IpAcquisition {
      */
     @PutMapping(path="/freed" + IpAcquisition.IP_ADDR_PATH_NAME)
     public ResponseEntity<Void> releaseIp(@PathVariable(IP_ADDR_PATH_VAR) String ipAddr) {
-        ResponseEntity<Void> responseEntity = ResponseEntity.ok().build();
+        ResponseEntity<Void> responseEntity;
         log.debug("Got IP address to release: {}", ipAddr);
-        // Got some kind of IP address to release.
+        try {
+            ipStateService.setIpStateReleased(ipAddr);
+            responseEntity = ResponseEntity.ok().build();
+        } catch (IpStateServiceException ipse) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
         return responseEntity;
     }
 
@@ -67,7 +101,12 @@ public class IpAcquisition {
     public ResponseEntity<Void> acquireIp(@PathVariable(IP_ADDR_PATH_VAR) String ipAddr) {
         ResponseEntity<Void> responseEntity = ResponseEntity.ok().build();
         log.debug("Got IP address request: {}", ipAddr);
-        // Got some kind of IP address requested.
+        try {
+            ipStateService.setIpStateAcquired(ipAddr);
+            responseEntity = ResponseEntity.ok().build();
+        } catch (IpStateServiceException ipse) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
         return responseEntity;
     }
 
