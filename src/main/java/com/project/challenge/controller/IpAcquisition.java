@@ -110,6 +110,11 @@ public class IpAcquisition {
         return responseEntity;
     }
 
+    /**
+     * Return states of all the IP addresses managed herein.
+     *
+     * @return IP Report telling if each and every IP address has been acquired.
+     */
     @GetMapping(path="/ip_states")
     public ResponseEntity<IpReport> listIps() {
         IpReport report = new IpReport();
