@@ -46,6 +46,10 @@ public class CIDR {
         return endingAddr;
     }
 
+    public long getSize() {
+        return endingAddr - startingAddr;
+    }
+
     public String getCidrBlockNotation() {
         return cidrBlockNotation;
     }

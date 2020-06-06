@@ -37,7 +37,10 @@ public class IpStateServiceImpl implements IpStateService {
         checkCidrState();
         checkInputValidity(ipAddr);
 
-        logger.debug("IP address {} is within range, and will be marked as acquired if it is not already acquired.");
+        logger.debug(
+                "IP address {} is within range, and will be marked as acquired if it is not already acquired.",
+                ipAddr
+        );
     }
 
     /**
@@ -51,7 +54,10 @@ public class IpStateServiceImpl implements IpStateService {
         checkCidrState();
         checkInputValidity(ipAddr);
 
-        logger.debug("IP address {} is within range, and will be marked as freed if it is not already free.");
+        logger.debug(
+                "IP address {} is within range, and will be marked as freed if it is not already free.",
+                ipAddr
+        );
     }
 
     /** Only managed, valid IP addresses can have states modified. */
