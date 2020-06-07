@@ -1,9 +1,16 @@
 package com.project.challenge.services;
 
+import com.project.challenge.entities.CidrBitBlock;
+import com.project.challenge.model.IpBlockDescriptor;
+import com.project.challenge.repositories.BlockRepository;
+import org.apache.commons.net.util.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.BitSet;
+import java.util.Optional;
 
 /**
  * Implements the state service transitioning states of IP addresses within CIDR range.
@@ -12,6 +19,10 @@ import org.springframework.stereotype.Service;
 public class IpStateServiceImpl implements IpStateService {
     private Ipv4ConversionService conversionService;
     private CidrStateService cidrStateService;
+    private IpBlockService blockService;
+    private BlockRepository blockRepository;
+
+    private Base64 base64 = new Base64();
 
     private static Logger logger = LogManager.getLogger(IpStateServiceImpl.class);
 
@@ -21,9 +32,16 @@ public class IpStateServiceImpl implements IpStateService {
      * @param cidrStateService - has the CIDR block in use.
      */
     @Autowired
-    public IpStateServiceImpl(Ipv4ConversionService conversionService, CidrStateService cidrStateService) {
+    public IpStateServiceImpl(
+            Ipv4ConversionService conversionService,
+            CidrStateService cidrStateService,
+            IpBlockService blockService,
+            BlockRepository blockRepository
+    ) {
         this.conversionService = conversionService;
         this.cidrStateService = cidrStateService;
+        this.blockRepository = blockRepository;
+        this.blockService = blockService;
     }
 
     /**
@@ -41,6 +59,29 @@ public class IpStateServiceImpl implements IpStateService {
                 "IP address {} is within range, and will be marked as acquired if it is not already acquired.",
                 ipAddr
         );
+
+        // Need to figure out where this thing is.
+        IpBlockDescriptor descriptor = getBlockDescriptor(ipAddr);
+        Optional<CidrBitBlock> bitBlockOptional = blockRepository.findById((int)descriptor.getBlockNum());
+        if (bitBlockOptional.isPresent()) {
+            CidrBitBlock bitBlock = bitBlockOptional.get();
+            BitSet bitSet = BitSet.valueOf(base64.decode(bitBlock.getEncodedBits()));
+            final int blockOffset = (int) descriptor.getBlockOffset();
+            boolean hasBeenAcquired = bitSet.get( blockOffset );
+
+            if (hasBeenAcquired) {
+                // Too late!  This one is already in use.
+                throw new IpStateServiceException(new IllegalArgumentException("IP address already acquired: " + ipAddr));
+            } else {
+                bitSet.set( blockOffset, !hasBeenAcquired );
+
+                bitBlock.setEncodedBits( base64.encodeToString( bitSet.toByteArray() ) );
+                blockRepository.save(bitBlock);
+            }
+
+        } else {
+            throw new IpStateServiceException(new NullPointerException("No block found for " + ipAddr));
+        }
     }
 
     /**
@@ -76,6 +117,24 @@ public class IpStateServiceImpl implements IpStateService {
         if (! cidrStateService.isPopulated()) {
             throw new IpStateServiceException(new IllegalStateException("CIDR block not populated"));
         }
+    }
+
+    /**
+     * Get the descriptor telling all about where this IP address falls within the blocks of the
+     * repo.
+     *
+     * @param ipAddr IP address within range.
+     * @return bean with metadata.
+     */
+    private IpBlockDescriptor getBlockDescriptor(String ipAddr) {
+        IpBlockDescriptor IpBlockDescriptor = null;
+        try {
+            IpBlockDescriptor = blockService.getBitBlockDescriptor(cidrStateService.getCidrBlock(), ipAddr);
+        } catch (InvalidFormatException ife) {
+            // Should not happen.  Already validated.
+            ife.printStackTrace();
+        }
+        return IpBlockDescriptor;
     }
 
 }

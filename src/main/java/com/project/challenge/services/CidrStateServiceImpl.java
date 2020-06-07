@@ -1,6 +1,8 @@
 package com.project.challenge.services;
 
+import com.project.challenge.entities.CidrBitBlock;
 import com.project.challenge.model.CIDR;
+import com.project.challenge.repositories.BlockRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,15 +14,25 @@ import org.springframework.stereotype.Service;
 public class CidrStateServiceImpl implements CidrStateService {
     private CIDR cidrBlock = null;
     private Ipv4ConversionService conversionService;
+    private IpBlockService blockService;
+    private BlockRepository blockRepository;
 
     /**
      * Construct with all injected services.
      *
      * @param conversionService for handling cidr block format.
+     * @param blockService for calculating block-related things
+     * @param blockRepository for serializing.
      */
     @Autowired
-    public CidrStateServiceImpl(Ipv4ConversionService conversionService) {
+    public CidrStateServiceImpl(
+            Ipv4ConversionService conversionService,
+            IpBlockService blockService,
+            BlockRepository blockRepository
+    ) {
         this.conversionService = conversionService;
+        this.blockService = blockService;
+        this.blockRepository = blockRepository;
     }
 
     /**
@@ -36,18 +48,30 @@ public class CidrStateServiceImpl implements CidrStateService {
      * @param cidrBlockStr populate w/ this one.
      */
     public void setCidrBlock(String cidrBlockStr) throws CidrExistsException, InvalidFormatException {
-        if (isPopulated()) {
-            throw new CidrExistsException();
-        }
-        this.cidrBlock = conversionService.toCidr(cidrBlockStr);
+        setCidrBlock(conversionService.toCidr(cidrBlockStr));
     }
 
     /**
      * Establish the CIDR block.
      * @param cidrBlock populate w/ this one.
      */
-    public void setCidrBlock(CIDR cidrBlock) {
+    public void setCidrBlock(CIDR cidrBlock) throws CidrExistsException {
+        if (isPopulated()) {
+            throw new CidrExistsException();
+        }
         this.cidrBlock = cidrBlock;
+        int blockCount = blockService.getBlockCount(this.cidrBlock);
+        String emptyBlockStr = blockService.getEmptyBlock();
+
+        // Make empty blocks with hardcoded identifiers.
+        for (int i = 0; i < blockCount; i++) {
+            // Write one block for each.
+            CidrBitBlock bitBlock = new CidrBitBlock();
+            bitBlock.setId(i);
+            bitBlock.setEncodedBits(emptyBlockStr);
+            blockRepository.save(bitBlock);
+        }
+
     }
 
     /**
@@ -59,6 +83,5 @@ public class CidrStateServiceImpl implements CidrStateService {
     public boolean isPopulated() {
         return this.cidrBlock != null;
     }
-
 
 }

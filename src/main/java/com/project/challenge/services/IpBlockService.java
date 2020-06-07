@@ -2,18 +2,12 @@ package com.project.challenge.services;
 
 import com.project.challenge.model.CIDR;
 import com.project.challenge.model.IpBlockDescriptor;
-import org.springframework.beans.factory.annotation.Autowired;
 
-public class IpBlockService {
-    private static final long BIT_BLOCK_SIZE = 1024;
-
-    private Ipv4ConversionService conversionService;
-
-    @Autowired
-    public IpBlockService(Ipv4ConversionService conversionService) {
-        this.conversionService = conversionService;
-    }
-
+/**
+ * Implementations will provide a means for working with blocks of bits that represent the states of IP
+ * addresses within CIDR blocks.
+ */
+public interface IpBlockService {
     /**
      * Create the descriptor for accessing a bit that represents the IP address given.
      *
@@ -22,14 +16,7 @@ public class IpBlockService {
      * @return where is this IP address' state represented in the block store?
      * @throws InvalidFormatException if bad IP address given.
      */
-    public IpBlockDescriptor getBitBlockDescriptor(CIDR cidrBlock, String ipAddr) throws InvalidFormatException {
-        long ipLocation = Integer.toUnsignedLong(conversionService.getIpAsInt(ipAddr));
-        long offsetLoc = getIpAddrOffsetWithinCidr(cidrBlock, ipLocation);
-        long blockNum = getBitBlockNumber(offsetLoc);
-        long blockOffset = getBlockOffset(offsetLoc);
-
-        return new IpBlockDescriptor(ipAddr, blockNum, blockOffset);
-    }
+    IpBlockDescriptor getBitBlockDescriptor(CIDR cidrBlock, String ipAddr) throws InvalidFormatException;
 
     /**
      * How many blocks will it take to hold the currently-set CIDR block?
@@ -37,44 +24,21 @@ public class IpBlockService {
      * @param cidrBlock find block count for this CIDR block.
      * @return the block count.
      */
-    public int getBlockCount(CIDR cidrBlock) {
-        if (cidrBlock == null) {
-            return 0;
-        }
-        return (int)(cidrBlock.getSize() / BIT_BLOCK_SIZE);
-    }
+    int getBlockCount(CIDR cidrBlock);
 
     /**
-     * A CIDR range has a starting and ending position.  This method takes the "integer location" of
-     * this IP address and subtracts from that the start of the CIDR block.
+     * Size of each block in bits.
      *
-     * @param cidrBlock find where IP address goes in this cidr block.
-     * @param ipLocation absolute unsigned int location of IP address.
-     * @return location within CIDR block.
+     * @return bits in block
      */
-    private long getIpAddrOffsetWithinCidr(CIDR cidrBlock, long ipLocation) {
-        return ipLocation - cidrBlock.getStartingAddrLong();
-    }
+    long getBlockSize();
 
     /**
-     * All acquired/free states of IP addresses are represented as bit values.  This tells location
-     * within the block containing it.
+     * Create and return an empty block of the size appropriate to match an encoded
+     * block of bits that are all zero.
      *
-     * @param offsetLoc location within the CIDR's space
-     * @return offset within the block.
+     * @return blank block of size as given in
+     * @see long IpBlockService.getBlockSize()
      */
-    private long getBlockOffset(long offsetLoc) {
-        return offsetLoc % BIT_BLOCK_SIZE;
-    }
-
-    /**
-     * All acquired/free states of IP addresses are represented as bit values.  This tells which
-     * block contains this one.
-     *
-     * @param offsetLoc offset within CIDR's space
-     * @return which block (given the chosen block size).
-     */
-    private long getBitBlockNumber(long offsetLoc) {
-        return offsetLoc / BIT_BLOCK_SIZE;
-    }
+    String getEmptyBlock();
 }

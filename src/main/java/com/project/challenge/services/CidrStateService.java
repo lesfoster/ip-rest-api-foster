@@ -16,7 +16,7 @@ public interface CidrStateService {
      * Establish the CIDR block.
      * @param cidrBlock
      */
-    void setCidrBlock(CIDR cidrBlock);
+    void setCidrBlock(CIDR cidrBlock) throws CidrExistsException;
 
     /**
      * Establish CIDR block.

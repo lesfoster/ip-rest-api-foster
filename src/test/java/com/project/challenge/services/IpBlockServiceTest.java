@@ -102,7 +102,7 @@ public class IpBlockServiceTest {
 
     private IpBlockService getBlockService() throws InvalidFormatException {
         Ipv4ConversionService ics = new Ipv4ConversionServiceImpl();
-        IpBlockService service = new IpBlockService(ics);
+        IpBlockService service = new IpBlockServiceImpl(ics);
 
         return service;
     }

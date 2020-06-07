@@ -1,4 +1,4 @@
-package com.project.challenge.controller;
+package com.project.challenge.controllers;
 
 import com.project.challenge.model.IpReport;
 import com.project.challenge.services.*;
