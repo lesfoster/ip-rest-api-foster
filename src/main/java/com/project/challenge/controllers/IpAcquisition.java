@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -130,4 +131,24 @@ public class IpAcquisition {
 
         return responseEntity;
     }
+
+    /**
+     * LIST - Return states of all the IP addresses managed herein.
+     *
+     * @return IP Report telling if each and every IP address has been acquired.
+     */
+    @GetMapping(path="/ip_states_flat", produces = { MediaType.TEXT_PLAIN_VALUE })
+    public ResponseEntity<String> listIpsFlat() {
+        log.debug("Report request.");
+        ResponseEntity<String> responseEntity;
+        try {
+            IpReport report = ipStateService.getIpReport();
+            responseEntity =  ResponseEntity.ok(report.toString());
+        } catch (IpStateServiceException ipse) {
+            responseEntity = ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+        }
+
+        return responseEntity;
+    }
+
 }
