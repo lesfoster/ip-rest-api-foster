@@ -68,7 +68,6 @@ public class CidrStateServiceImpl implements CidrStateService {
      * @param cidrBlock populate w/ this one.
      */
     public void setCidrBlock(CIDR cidrBlock) throws CidrExistsException {
-        lazyLoadCidr();
         if (isPopulated()) {
             throw new CidrExistsException();
         }
@@ -100,11 +99,12 @@ public class CidrStateServiceImpl implements CidrStateService {
      */
     @Override
     public boolean isPopulated() {
+        lazyLoadCidr();
         return this.cidrBlock != null;
     }
 
     private void lazyLoadCidr() {
-        if (! isPopulated()) {
+        if (this.cidrBlock == null) {
             try {
                 attemptDbFetchOfCidr();
             } catch (Exception ex) {
