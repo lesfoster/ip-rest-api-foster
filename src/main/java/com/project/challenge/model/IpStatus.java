@@ -13,11 +13,11 @@ public class IpStatus {
         this.checkoutState = checkoutState;
     }
 
-    public String getIpAddress() {
+    public String getIp() {
         return ipAddress;
     }
 
-    public IpCheckoutState getCheckoutState() {
+    public IpCheckoutState getState() {
         return checkoutState;
     }
 }
