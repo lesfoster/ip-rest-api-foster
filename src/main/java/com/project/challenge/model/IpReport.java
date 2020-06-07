@@ -1,10 +1,10 @@
 package com.project.challenge.model;
 
-import java.util.List;
+import java.util.Map;
 
 public class IpReport {
     private String cidr;
-    private List<IpStatus> ipStatusList;
+    private Map<String,IpCheckoutState> ipStatus;
 
     public String getCidr() {
         return cidr;
@@ -14,11 +14,11 @@ public class IpReport {
         this.cidr = cidr;
     }
 
-    public List<IpStatus> getIpStatusList() {
-        return ipStatusList;
+    public Map<String,IpCheckoutState> getIpStatus() {
+        return ipStatus;
     }
 
-    public void setIpStatusList(List<IpStatus> ipStatusList) {
-        this.ipStatusList = ipStatusList;
+    public void setIpStatus(Map<String,IpCheckoutState> ipStatus) {
+        this.ipStatus = ipStatus;
     }
 }

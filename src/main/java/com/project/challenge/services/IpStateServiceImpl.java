@@ -9,10 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Implements the state service transitioning states of IP addresses within CIDR range.
@@ -147,8 +144,8 @@ public class IpStateServiceImpl implements IpStateService {
 
         IpReport report = new IpReport();
         report.setCidr(cidrBlock.getCidrBlockNotation());
-        List<IpStatus> ipStatusList = new ArrayList<>();
-        report.setIpStatusList(ipStatusList);
+        Map<String,IpCheckoutState> ipStatusMap = new HashMap<>();
+        report.setIpStatus(ipStatusMap);
 
         // Going through all blocks found.
         allCidrBlocks.forEach(bitBlock -> {
@@ -165,11 +162,7 @@ public class IpStateServiceImpl implements IpStateService {
 
             int blockOffset = 0;
             for (long l = startingAddressInBlock; l <= endingAddressInBlock; l++) {
-                IpStatus ipStatus = new IpStatus(
-                        conversionService.getLongAsIp(l),
-                        checkoutState( bitSet.get( blockOffset ) )
-                );
-                ipStatusList.add( ipStatus );
+                ipStatusMap.put( conversionService.getLongAsIp(l), checkoutState( bitSet.get( blockOffset ) ) );
                 blockOffset ++;
             }
         });
