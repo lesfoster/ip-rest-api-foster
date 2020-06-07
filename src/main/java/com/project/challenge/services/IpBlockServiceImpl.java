@@ -4,9 +4,11 @@ import com.project.challenge.model.CIDR;
 import com.project.challenge.model.IpBlockDescriptor;
 import org.apache.commons.net.util.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.BitSet;
 
+@Service
 public class IpBlockServiceImpl implements IpBlockService {
     private static final long BIT_BLOCK_SIZE = 1024;
 
@@ -47,7 +49,13 @@ public class IpBlockServiceImpl implements IpBlockService {
         if (cidrBlock == null) {
             return 0;
         }
-        return (int)(cidrBlock.getSize() / BIT_BLOCK_SIZE);
+        final long size = cidrBlock.getSize();
+        final int naiveBlockCount = (int) (size / BIT_BLOCK_SIZE);
+        if (size % BIT_BLOCK_SIZE == 0) {
+            return naiveBlockCount;
+        } else {
+            return naiveBlockCount + 1;
+        }
     }
 
     /**

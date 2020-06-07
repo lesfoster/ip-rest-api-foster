@@ -60,28 +60,7 @@ public class IpStateServiceImpl implements IpStateService {
                 ipAddr
         );
 
-        // Need to figure out where this thing is.
-        IpBlockDescriptor descriptor = getBlockDescriptor(ipAddr);
-        Optional<CidrBitBlock> bitBlockOptional = blockRepository.findById((int)descriptor.getBlockNum());
-        if (bitBlockOptional.isPresent()) {
-            CidrBitBlock bitBlock = bitBlockOptional.get();
-            BitSet bitSet = BitSet.valueOf(base64.decode(bitBlock.getEncodedBits()));
-            final int blockOffset = (int) descriptor.getBlockOffset();
-            boolean hasBeenAcquired = bitSet.get( blockOffset );
-
-            if (hasBeenAcquired) {
-                // Too late!  This one is already in use.
-                throw new IpStateServiceException(new IllegalArgumentException("IP address already acquired: " + ipAddr));
-            } else {
-                bitSet.set( blockOffset, !hasBeenAcquired );
-
-                bitBlock.setEncodedBits( base64.encodeToString( bitSet.toByteArray() ) );
-                blockRepository.save(bitBlock);
-            }
-
-        } else {
-            throw new IpStateServiceException(new NullPointerException("No block found for " + ipAddr));
-        }
+        setIpAddressState(ipAddr, true);
     }
 
     /**
@@ -99,6 +78,41 @@ public class IpStateServiceImpl implements IpStateService {
                 "IP address {} is within range, and will be marked as freed if it is not already free.",
                 ipAddr
         );
+
+        setIpAddressState(ipAddr, false);
+    }
+
+    /**
+     * Logic of how to set state disposition.  If has been acquired and acquired is being requested, then this
+     * will not be allowed.
+     *
+     * @param ipAddr which IP to acquire (or free).
+     * @param targetAcquiredState T=acquire; F=free
+     * @throws IpStateServiceException thrown if acquire is requested, but already acquired.
+     */
+    private void setIpAddressState(String ipAddr, boolean targetAcquiredState) throws IpStateServiceException {
+        // Need to figure out where this thing is.
+        IpBlockDescriptor descriptor = getBlockDescriptor(ipAddr);
+        Optional<CidrBitBlock> bitBlockOptional = blockRepository.findById((int)descriptor.getBlockNum());
+        if (bitBlockOptional.isPresent()) {
+            CidrBitBlock bitBlock = bitBlockOptional.get();
+            BitSet bitSet = BitSet.valueOf(base64.decode(bitBlock.getEncodedBits()));
+            final int blockOffset = (int) descriptor.getBlockOffset();
+            boolean hasBeenAcquired = bitSet.get( blockOffset );
+
+            if (targetAcquiredState   &&   hasBeenAcquired) {
+                // Too late!  This one is already in use.
+                throw new IpStateServiceException(new IllegalArgumentException("IP address already acquired: " + ipAddr));
+            } else {
+                bitSet.set( blockOffset, !hasBeenAcquired );
+
+                bitBlock.setEncodedBits( base64.encodeToString( bitSet.toByteArray() ) );
+                blockRepository.save(bitBlock);
+            }
+
+        } else {
+            throw new IpStateServiceException(new NullPointerException("No block found for " + ipAddr));
+        }
     }
 
     /** Only managed, valid IP addresses can have states modified. */
