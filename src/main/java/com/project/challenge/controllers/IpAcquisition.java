@@ -1,6 +1,7 @@
 package com.project.challenge.controllers;
 
 import com.project.challenge.model.IpReport;
+import com.project.challenge.repositories.CidrDefRepository;
 import com.project.challenge.services.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,7 +37,10 @@ public class IpAcquisition {
      * @param ipStateService used for storing the state back/reading states of IPs and CIDR blocks.
      */
     @Autowired
-    public IpAcquisition(IpStateService ipStateService, CidrStateService cidrStateService) {
+    public IpAcquisition(
+            IpStateService ipStateService,
+            CidrStateService cidrStateService,
+            CidrDefRepository cidrDefRepository) {
         this.ipStateService = ipStateService;
         this.cidrStateService = cidrStateService;
     }

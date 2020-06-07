@@ -1,0 +1,2 @@
+INSERT INTO CIDR_BIT_BLOCK (ID, ENCODED_BITS) values (0, '');
+insert INTO CIDR_DEF (CIDR) values ('10.0.0.0/24');

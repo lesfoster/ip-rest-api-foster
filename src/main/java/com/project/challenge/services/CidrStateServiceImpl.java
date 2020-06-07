@@ -1,10 +1,16 @@
 package com.project.challenge.services;
 
 import com.project.challenge.entities.CidrBitBlock;
+import com.project.challenge.entities.CidrDef;
 import com.project.challenge.model.CIDR;
 import com.project.challenge.repositories.BlockRepository;
+import com.project.challenge.repositories.CidrDefRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Collection;
 
 /**
  * This service more-or-less caches the state of the CIDR block.  Prior to establishing a CIDR block,
@@ -16,6 +22,9 @@ public class CidrStateServiceImpl implements CidrStateService {
     private Ipv4ConversionService conversionService;
     private IpBlockService blockService;
     private BlockRepository blockRepository;
+    private CidrDefRepository cidrDefRepository;
+
+    private static Logger log = LogManager.getLogger( CidrStateServiceImpl.class );
 
     /**
      * Construct with all injected services.
@@ -28,11 +37,13 @@ public class CidrStateServiceImpl implements CidrStateService {
     public CidrStateServiceImpl(
             Ipv4ConversionService conversionService,
             IpBlockService blockService,
-            BlockRepository blockRepository
+            BlockRepository blockRepository,
+            CidrDefRepository cidrDefRepository
     ) {
         this.conversionService = conversionService;
         this.blockService = blockService;
         this.blockRepository = blockRepository;
+        this.cidrDefRepository = cidrDefRepository;
     }
 
     /**
@@ -40,6 +51,7 @@ public class CidrStateServiceImpl implements CidrStateService {
      * @return CIDR block.
      */
     public CIDR getCidrBlock() {
+        lazyLoadCidr();
         return cidrBlock;
     }
 
@@ -56,6 +68,7 @@ public class CidrStateServiceImpl implements CidrStateService {
      * @param cidrBlock populate w/ this one.
      */
     public void setCidrBlock(CIDR cidrBlock) throws CidrExistsException {
+        lazyLoadCidr();
         if (isPopulated()) {
             throw new CidrExistsException();
         }
@@ -72,6 +85,12 @@ public class CidrStateServiceImpl implements CidrStateService {
             blockRepository.save(bitBlock);
         }
 
+        //  Update the CIDR definition in the database.
+        cidrDefRepository.deleteAll();
+        CidrDef cidrDef = new CidrDef();
+        cidrDef.setCidr(cidrBlock.getCidrBlockNotation());
+        cidrDefRepository.save( cidrDef );
+
     }
 
     /**
@@ -82,6 +101,24 @@ public class CidrStateServiceImpl implements CidrStateService {
     @Override
     public boolean isPopulated() {
         return this.cidrBlock != null;
+    }
+
+    private void lazyLoadCidr() {
+        if (! isPopulated()) {
+            try {
+                attemptDbFetchOfCidr();
+            } catch (Exception ex) {
+                log.warn( "Invalid CIDR in Database." );
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    private void attemptDbFetchOfCidr() throws InvalidFormatException {
+        Collection<CidrDef> cidrDefs = cidrDefRepository.findAll();
+        if (cidrDefs.size() == 1) {
+            this.cidrBlock = conversionService.toCidr( cidrDefs.stream().findFirst().get().getCidr() );
+        }
     }
 
 }
