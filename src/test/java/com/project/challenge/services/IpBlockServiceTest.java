@@ -5,8 +5,8 @@ import com.project.challenge.model.IpBlockDescriptor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Shaking down the block service.
@@ -27,7 +27,7 @@ public class IpBlockServiceTest {
 
     private static Logger logger = LogManager.getLogger(IpBlockServiceTest.class);
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         smallCidr = conversionService.toCidr(SMALL_CIDR);
         largeCidr = conversionService.toCidr(LARGE_CIDR);
@@ -69,7 +69,7 @@ public class IpBlockServiceTest {
         Assert.assertEquals("Unexpected bit block num", 63, bitBlockDescriptor.getBlockNum());
         Assert.assertEquals("Unexpected bit block offset", 1023, bitBlockDescriptor.getBlockOffset());
         Assert.assertEquals("Unexpected IP: what happened?", IP_FOR_MAX_IN_LARGE_RANGE, bitBlockDescriptor.getIpAddr());
-        Assert.assertEquals("Unexpected block count", 63, blockServiceLarge.getBlockCount(largeCidr));
+        Assert.assertEquals("Unexpected block count", 64, blockServiceLarge.getBlockCount(largeCidr));
     }
 
     @Test

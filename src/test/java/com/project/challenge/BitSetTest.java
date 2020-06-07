@@ -2,7 +2,7 @@ package com.project.challenge;
 
 import org.apache.commons.net.util.Base64;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;

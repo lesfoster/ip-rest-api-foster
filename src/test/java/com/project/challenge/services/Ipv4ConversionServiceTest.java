@@ -2,8 +2,8 @@ package com.project.challenge.services;
 
 import com.project.challenge.model.CIDR;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Tests efficiency of the converter.  Expected conformity of IP addresses per:
@@ -23,7 +23,7 @@ public class Ipv4ConversionServiceTest {
 
     private Ipv4ConversionService service;
 
-    @Before
+    @BeforeEach
     public void setup() {
         this.service = new Ipv4ConversionServiceImpl();
     }
