@@ -9,8 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-
 /**
  * REST ful endpoint controller for IP address management.
  *
@@ -111,16 +109,20 @@ public class IpAcquisition {
     }
 
     /**
-     * Return states of all the IP addresses managed herein.
+     * LIST - Return states of all the IP addresses managed herein.
      *
      * @return IP Report telling if each and every IP address has been acquired.
      */
     @GetMapping(path="/ip_states")
     public ResponseEntity<IpReport> listIps() {
-        IpReport report = new IpReport();
-        report.setCidr("10.0.0.0/24");
-        report.setIpStatusList(Collections.emptyList());
-        ResponseEntity<IpReport> responseEntity = ResponseEntity.ok(report);
+        log.debug("Report request.");
+        ResponseEntity<IpReport> responseEntity;
+        try {
+            IpReport report = ipStateService.getIpReport();
+            responseEntity =  ResponseEntity.ok(report);
+        } catch (IpStateServiceException ipse) {
+            responseEntity = ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+        }
 
         return responseEntity;
     }

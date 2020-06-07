@@ -31,6 +31,14 @@ public interface Ipv4ConversionService {
     Integer getIpAsInt(String ipAddress) throws InvalidFormatException;
 
     /**
+     * Converts an integer-version of the IP address back into a string-wise tuple.
+     *
+     * @param intAddress using long for convenience with caller.
+     * @return IP tuple of format NNN.NNN.NNN.NNN
+     */
+    String getLongAsIp(Long intAddress);
+
+    /**
      * Test for validity of CIDR block.
      * ex: 128.5.3.22/24
      *

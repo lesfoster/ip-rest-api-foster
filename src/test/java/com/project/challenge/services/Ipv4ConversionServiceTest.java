@@ -19,6 +19,7 @@ public class Ipv4ConversionServiceTest {
     private static final String ABOVE_RANGE_VALID_IP = "128.72.54.0";
 
     private static final String GENERIC_TEST_CONSTANT = "TEST";
+    public static final String ALL_HOSTS_BROADCAST = "255.255.255.255";
 
     private Ipv4ConversionService service;
 
@@ -45,6 +46,23 @@ public class Ipv4ConversionServiceTest {
     @Test
     public void testInvalidCIDR() {
         Assert.assertFalse("Invalid CIDR flagged valid", service.isValidCidr(GENERIC_TEST_CONSTANT));
+    }
+
+    @Test
+    public void testIpIntConversions() throws InvalidFormatException {
+        // Convert a typical IP address.
+        Integer ipAsInt = service.getIpAsInt(VALID_IP_BRDCSTADDR);
+        String cycledIpAddr = service.getLongAsIp(Integer.toUnsignedLong(ipAsInt));
+        Assert.assertEquals("Failed to back-convert IP address", VALID_IP_BRDCSTADDR, cycledIpAddr );
+
+        // Give every opportunity to crash on negatives.
+        ipAsInt = service.getIpAsInt(ALL_HOSTS_BROADCAST);
+        cycledIpAddr = service.getLongAsIp(Integer.toUnsignedLong(ipAsInt));
+        Assert.assertEquals(
+                "Failed to back-convert all-hosts-broadcast IP address",
+                ALL_HOSTS_BROADCAST,
+                cycledIpAddr
+        );
     }
 
     @Test

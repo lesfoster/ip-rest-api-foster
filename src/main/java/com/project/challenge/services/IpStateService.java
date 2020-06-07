@@ -1,5 +1,6 @@
 package com.project.challenge.services;
 
+import com.project.challenge.model.IpReport;
 import org.springframework.stereotype.Service;
 
 /**
@@ -9,4 +10,5 @@ import org.springframework.stereotype.Service;
 public interface IpStateService {
     void setIpStateAcquired(String ipAddr) throws IpStateServiceException;
     void setIpStateReleased(String ipAddr) throws IpStateServiceException;
+    IpReport getIpReport() throws IpStateServiceException;
 }

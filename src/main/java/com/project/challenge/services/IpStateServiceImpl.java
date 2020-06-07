@@ -1,7 +1,7 @@
 package com.project.challenge.services;
 
 import com.project.challenge.entities.CidrBitBlock;
-import com.project.challenge.model.IpBlockDescriptor;
+import com.project.challenge.model.*;
 import com.project.challenge.repositories.BlockRepository;
 import org.apache.commons.net.util.Base64;
 import org.apache.logging.log4j.LogManager;
@@ -9,7 +9,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -83,6 +85,19 @@ public class IpStateServiceImpl implements IpStateService {
     }
 
     /**
+     * Return full list of all managed IPs vs each one's status.
+     *
+     * @return full report
+     * @throws IpStateServiceException if nothing to report.
+     */
+    @Override
+    public IpReport getIpReport() throws IpStateServiceException {
+        checkCidrState();
+
+        return buildReport();
+    }
+
+    /**
      * Logic of how to set state disposition.  If has been acquired and acquired is being requested, then this
      * will not be allowed.
      *
@@ -115,6 +130,53 @@ public class IpStateServiceImpl implements IpStateService {
         }
     }
 
+    /**
+     * Logic of extracting all IP addresses from all blocks.
+     */
+    private IpReport buildReport() {
+        // Need to figure out where this thing is.
+        List<CidrBitBlock> allCidrBlocks = blockRepository.findAll();
+
+        final CIDR cidrBlock = cidrStateService.getCidrBlock();
+
+        Long startingAddressOfCidr = cidrBlock.getStartingAddrLong();
+        Long endingAddressOfCidr = cidrBlock.getEndingAddrLong();
+        Long addressSpanOfCidr = endingAddressOfCidr - startingAddressOfCidr;
+
+        final long blockSize = blockService.getBlockSize();
+
+        IpReport report = new IpReport();
+        report.setCidr(cidrBlock.getCidrBlockNotation());
+        List<IpStatus> ipStatusList = new ArrayList<>();
+        report.setIpStatusList(ipStatusList);
+
+        // Going through all blocks found.
+        allCidrBlocks.forEach(bitBlock -> {
+            // Must decode this block, and iterate through all its IP addresses.
+            int blockNumber = bitBlock.getId();
+            Long startingAddressInBlock = startingAddressOfCidr + (blockNumber * blockSize);
+            long bitsInBlock = blockSize;
+            if (startingAddressInBlock + blockSize > addressSpanOfCidr) {
+                bitsInBlock = addressSpanOfCidr % blockSize;
+            }
+
+            BitSet bitSet = BitSet.valueOf(base64.decode(bitBlock.getEncodedBits()));
+            Long endingAddressInBlock = startingAddressInBlock + bitsInBlock;
+
+            int blockOffset = 0;
+            for (long l = startingAddressInBlock; l <= endingAddressInBlock; l++) {
+                IpStatus ipStatus = new IpStatus(
+                        conversionService.getLongAsIp(l),
+                        checkoutState( bitSet.get( blockOffset ) )
+                );
+                ipStatusList.add( ipStatus );
+                blockOffset ++;
+            }
+        });
+
+        return report;
+    }
+
     /** Only managed, valid IP addresses can have states modified. */
     private void checkInputValidity(String ipAddress) throws IpStateServiceException {
         try {
@@ -130,6 +192,15 @@ public class IpStateServiceImpl implements IpStateService {
     private void checkCidrState() throws IpStateServiceException {
         if (! cidrStateService.isPopulated()) {
             throw new IpStateServiceException(new IllegalStateException("CIDR block not populated"));
+        }
+    }
+
+    /** Decode booleans into checkout state. */
+    private IpCheckoutState checkoutState(boolean isCheckedOut) {
+        if (isCheckedOut) {
+            return IpCheckoutState.ACQUIRED;
+        } else {
+            return IpCheckoutState.FREE;
         }
     }
 

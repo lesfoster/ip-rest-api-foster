@@ -7,6 +7,7 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.net.Inet4Address;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +26,7 @@ public class Ipv4ConversionServiceImpl implements Ipv4ConversionService {
 
     public static final String INVALID_PI_FMT = "Invalid IP: %s";
     public static final String INVALID_CIDR_FMT = "Invalid CIDR block: %s";
+    public static final String IP_ADDRESS_FORMAT = "%03d.%03d.%03d.%03d";
 
     private InetAddressValidator validator = new InetAddressValidator();
 
@@ -60,6 +62,19 @@ public class Ipv4ConversionServiceImpl implements Ipv4ConversionService {
         } else {
             throw new InvalidFormatException(INVALID_PI_FMT, ipAddress);
         }
+    }
+
+    /**
+     * Given a long value, we can make it back into an IP address-formatted string.
+     *
+     * @param intAddress using long for convenience with caller.
+     * @return formatted like NNN.NNN.NNN.NNN
+     */
+    @Override
+    public String getLongAsIp(Long intAddress) {
+        Integer signedIntAddress = (int)(long)intAddress;
+        Inet4Address address = InetAddresses.fromInteger(signedIntAddress);
+        return InetAddresses.toAddrString(address);
     }
 
     /**
