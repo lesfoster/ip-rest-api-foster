@@ -105,6 +105,9 @@ public class IpStateServiceImpl implements IpStateService {
     private void setIpAddressState(String ipAddr, boolean targetAcquiredState) throws IpStateServiceException {
         // Need to figure out where this thing is.
         IpBlockDescriptor descriptor = getBlockDescriptor(ipAddr);
+        if (descriptor == null) {
+            throw new IpStateServiceException(new IllegalArgumentException("No descriptor found for Ip Address"));
+        }
         Optional<CidrBitBlock> bitBlockOptional = blockRepository.findById((int)descriptor.getBlockNum());
         if (bitBlockOptional.isPresent()) {
             CidrBitBlock bitBlock = bitBlockOptional.get();
@@ -201,18 +204,18 @@ public class IpStateServiceImpl implements IpStateService {
      * Get the descriptor telling all about where this IP address falls within the blocks of the
      * repo.
      *
-     * @param ipAddr IP address within range.
+     * @param ipAddr IP address within range.  Validate at caller.
      * @return bean with metadata.
      */
     private IpBlockDescriptor getBlockDescriptor(String ipAddr) {
-        IpBlockDescriptor IpBlockDescriptor = null;
+        IpBlockDescriptor ipBlockDescriptor = null;
         try {
-            IpBlockDescriptor = blockService.getBitBlockDescriptor(cidrStateService.getCidrBlock(), ipAddr);
+            ipBlockDescriptor = blockService.getBitBlockDescriptor(cidrStateService.getCidrBlock(), ipAddr);
         } catch (InvalidFormatException ife) {
-            // Should not happen.  Already validated.
-            ife.printStackTrace();
+            // Should not happen.  Should validated by caller.
+            logger.warn(ife);
         }
-        return IpBlockDescriptor;
+        return ipBlockDescriptor;
     }
 
 }

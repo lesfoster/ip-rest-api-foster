@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Optional;
 
 /**
  * This service more-or-less caches the state of the CIDR block.  Prior to establishing a CIDR block,
@@ -108,16 +109,16 @@ public class CidrStateServiceImpl implements CidrStateService {
             try {
                 attemptDbFetchOfCidr();
             } catch (Exception ex) {
-                log.warn( "Invalid CIDR in Database." );
-                ex.printStackTrace();
+                log.warn( "Invalid CIDR in Database.", ex );
             }
         }
     }
 
     private void attemptDbFetchOfCidr() throws InvalidFormatException {
         Collection<CidrDef> cidrDefs = cidrDefRepository.findAll();
-        if (cidrDefs.size() == 1) {
-            this.cidrBlock = conversionService.toCidr( cidrDefs.stream().findFirst().get().getCidr() );
+        final Optional<CidrDef> firstCidrDef = cidrDefs.stream().findFirst();
+        if (firstCidrDef.isPresent()) {
+            this.cidrBlock = conversionService.toCidr(firstCidrDef.get().getCidr());
         }
     }
 
